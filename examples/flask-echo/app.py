@@ -12,7 +12,6 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-
 import os
 import sys
 from argparse import ArgumentParser
@@ -54,7 +53,6 @@ configuration = Configuration(
     access_token=channel_access_token
 )
 
-
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -89,10 +87,12 @@ def callback():
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser(
-        usage='Usage: python ' + __file__ + ' [--port <port>] [--help]'
+        usage='Usage: python ' + __file__ + ' [--debug] [--help]'
     )
-    arg_parser.add_argument('-p', '--port', type=int, default=8000, help='port')
     arg_parser.add_argument('-d', '--debug', default=False, help='debug')
     options = arg_parser.parse_args()
 
-    app.run(host="0.0.0.0", debug=options.debug, port=options.port)
+    # Renderが渡す環境変数PORTを使う（指定がなければ10000を使用）
+    port = int(os.environ.get("PORT", 10000))
+
+    app.run(host="0.0.0.0", debug=options.debug, port=port)
