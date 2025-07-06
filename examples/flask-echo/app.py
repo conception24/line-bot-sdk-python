@@ -111,12 +111,24 @@ def callback():
 
             # ✅ 画像メッセージの場合は定型メッセージで応答
             elif isinstance(event.message, ImageMessageContent):
-                line_bot_api.reply_message_with_http_info(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="画像を受け取りました！ありがとう📸")]
-                    )
-                )
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+
+        # LINEの画像を取得
+        content_response = line_bot_api.get_message_content(message_id=event.message.id)
+        image_bytes = b''.join(content_response.iter_content(chunk_size=1024))
+
+        # Google Drive にアップロード
+        file_id = upload_to_drive(image_bytes, f"{event.message.id}.jpg")
+
+        # ユーザーに返信
+        line_bot_api.reply_message_with_http_info(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=f"画像を保存しました！（ID: {file_id}）")]
+            )
+        )
+
 
     return 'OK'
 
