@@ -45,6 +45,37 @@ if channel_access_token is None:
 parser = WebhookParser(channel_secret)
 configuration = Configuration(access_token=channel_access_token)
 
+
+def upload_to_drive(image_bytes, filename):
+    # 環境変数からBase64の認証情報を復元
+    credentials_json = base64.b64decode(os.environ['GOOGLE_CREDENTIALS_BASE64']).decode('utf-8')
+    credentials_dict = json.loads(credentials_json)
+
+    # 認証情報オブジェクトを作成
+    creds = service_account.Credentials.from_service_account_info(credentials_dict)
+
+    # Google Drive APIクライアントを初期化
+    service = build('drive', 'v3', credentials=creds)
+
+    # アップロードするファイルの設定
+    file_metadata = {
+        'name': filename,
+        'parents': ['1PoDaKlXm788CXiHeTW9iEFGUwjlxVNBD']  # フォルダIDを指定
+    }
+
+    media = MediaIoBaseUpload(io.BytesIO(image_bytes), mimetype='image/jpeg')
+
+    # アップロード実行
+    file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id'
+    ).execute()
+
+    return file.get('id')
+
+
+
 # ✅ / にアクセスしたときの簡易応答（Render確認用）
 @app.route("/")
 def index():
