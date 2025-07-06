@@ -1,32 +1,13 @@
 # -*- coding: utf-8 -*-
 
-#  Licensed under the Apache License, Version 2.0 (the "License"); you may
-#  not use this file except in compliance with the License. You may obtain
-#  a copy of the License at
-#
-#       https://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#  License for the specific language governing permissions and limitations
-#  under the License.
-
 import os
 import sys
 from argparse import ArgumentParser
 
 from flask import Flask, request, abort
-from linebot import (
-    WebhookParser
-)
-from linebot.v3.exceptions import (
-    InvalidSignatureError
-)
-from linebot.v3.webhooks import (
-    MessageEvent,
-    TextMessageContent,
-)
+from linebot.v3.webhook import WebhookParser  # ✅ 修正
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
@@ -48,14 +29,16 @@ if channel_access_token is None:
     sys.exit(1)
 
 parser = WebhookParser(channel_secret)
+configuration = Configuration(access_token=channel_access_token)
 
-configuration = Configuration(
-    access_token=channel_access_token
-)
+# ✅ 動作確認用のルート追加
+@app.route("/")
+def index():
+    return "LINE Bot is alive."
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers.get('X-Line-Signature', '')
 
     # get request body as text
     body = request.get_data(as_text=True)
@@ -67,7 +50,6 @@ def callback():
     except InvalidSignatureError:
         abort(400)
 
-    # if event is MessageEvent and message is TextMessage, then echo text
     for event in events:
         if not isinstance(event, MessageEvent):
             continue
@@ -81,9 +63,7 @@ def callback():
                     messages=[TextMessage(text=event.message.text)]
                 )
             )
-
     return 'OK'
-
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser(
@@ -92,7 +72,5 @@ if __name__ == "__main__":
     arg_parser.add_argument('-d', '--debug', default=False, help='debug')
     options = arg_parser.parse_args()
 
-    # Renderが渡す環境変数PORTを使う（指定がなければ10000を使用）
     port = int(os.environ.get("PORT", 10000))
-
     app.run(host="0.0.0.0", debug=options.debug, port=port)
