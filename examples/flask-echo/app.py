@@ -88,7 +88,7 @@ def handle_message(event):
             logger.error(f"テキストメッセージ返信エラー: {str(e)}")
             
     elif isinstance(event.message, ImageMessage):
-    logger.info("画像メッセージを受信")
+        logger.info("画像メッセージを受信")
     
         try:
             # 画像データを取得してBytesIOに格納
