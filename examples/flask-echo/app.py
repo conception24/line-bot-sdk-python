@@ -71,6 +71,42 @@ def callback():
     
     return 'OK'
 
+# ✅グーグルドライブにアップロードする関数を定義する 
+def upload_image_to_drive(image_data, filename, folder_id):
+    """Google Driveに画像をアップロードする"""
+    try:
+        # サービスアカウント認証
+        creds = service_account.Credentials.from_service_account_file(
+            'html-quiz-app-465012-4d1ecaf6b3c8.json',
+            scopes=['https://www.googleapis.com/auth/drive']
+        )
+        
+        # Drive APIクライアント作成
+        service = build('drive', 'v3', credentials=creds)
+        
+        # メタデータ定義
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        
+        # アップロード用メディアオブジェクト
+        media = MediaIoBaseUpload(image_data, mimetype='image/png')
+
+        # アップロード実行
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+        
+        logger.info(f"Google Driveにアップロード成功！ファイルID: {file.get('id')}")
+    
+    except Exception as e:
+        logger.error(f"Google Driveアップロード中にエラー: {str(e)}")
+
+
+
 # ✅ ユーザーからのメッセージ処理（Text / Image）
 @handler.add(MessageEvent)
 def handle_message(event):
@@ -97,6 +133,8 @@ def handle_message(event):
         try:
             # 画像データを取得してBytesIOに格納
             from io import BytesIO
+            from datetime import datetime  # ← 追加（上に書いてあれば不要）
+
             message_id = event.message.id
             message_content = line_bot_api.get_message_content(message_id)
             
@@ -107,7 +145,18 @@ def handle_message(event):
 
             logger.info("画像データをBytesIOに保存完了")
 
-            # 仮返信
+            # ミリ秒単位のファイル名を生成
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            filename = f"{timestamp}.png"
+
+            # Google Driveへアップロード
+            upload_image_to_drive(
+                image_data=image_data,
+                filename=filename,
+                folder_id="1PoDaKlXm788CXiHeTW9iEFGUwjlxVNBD"
+            )
+
+            # LINE返信
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="画像を受け取りました！")
@@ -119,6 +168,7 @@ def handle_message(event):
     
     else:
         logger.info(f"未対応のメッセージタイプ: {type(event.message)}")
+
 
 
 # ✅ アプリ起動設定（Render対応）
