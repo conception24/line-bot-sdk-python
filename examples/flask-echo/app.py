@@ -68,6 +68,7 @@ def callback():
     
     return 'OK'
 
+# ✅ ユーザーからのメッセージ処理（Text / Image）
 @handler.add(MessageEvent)
 def handle_message(event):
     logger.info("=== メッセージ受信 ===")
@@ -86,10 +87,10 @@ def handle_message(event):
             
         except Exception as e:
             logger.error(f"テキストメッセージ返信エラー: {str(e)}")
-            
+    
     elif isinstance(event.message, ImageMessage):
         logger.info("画像メッセージを受信")
-    
+
         try:
             # 画像データを取得してBytesIOに格納
             from io import BytesIO
@@ -100,21 +101,22 @@ def handle_message(event):
             for chunk in message_content.iter_content():
                 image_data.write(chunk)
             image_data.seek(0)
-    
+
             logger.info("画像データをBytesIOに保存完了")
-    
+
             # 仮返信
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="画像を受け取りました！")
             )
             logger.info("画像メッセージ返信完了")
-        
-    except Exception as e:
-        logger.error(f"画像処理エラー: {str(e)}")
 
+        except Exception as e:
+            logger.error(f"画像処理エラー: {str(e)}")
+    
     else:
         logger.info(f"未対応のメッセージタイプ: {type(event.message)}")
+
 
 # ✅ アプリ起動設定（Render対応）
 if __name__ == "__main__":
