@@ -12,6 +12,9 @@ from linebot.models import (
     ImageMessage,
     TextSendMessage
 )
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
 
 # ✅ ログ設定を追加
 logging.basicConfig(
